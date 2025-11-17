@@ -1,12 +1,43 @@
-import Spline from '@splinetool/react-spline'
+import React, { Suspense, lazy } from 'react'
+
+const Spline = lazy(() => import('@splinetool/react-spline'))
+
+class SplineBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch() {
+    // Swallow Spline errors so the rest of the page renders
+  }
+  render() {
+    if (this.state.hasError) return null
+    return this.props.children
+  }
+}
 
 export default function Hero() {
   return (
     <section className="relative min-h-[80vh] w-full overflow-hidden">
+      {/* Fallback background so text is visible even if Spline fails */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-900/80" />
+
+      {/* Spline scene (lazy-loaded and wrapped to avoid crashing the app if it errors) */}
       <div className="absolute inset-0">
-        <Spline scene="https://prod.spline.design/4Tf9WOIaWs6LOezG/scene.splinecode" style={{ width: '100%', height: '100%' }} />
+        <SplineBoundary>
+          <Suspense fallback={null}>
+            <Spline
+              scene="https://prod.spline.design/4Tf9WOIaWs6LOezG/scene.splinecode"
+              style={{ width: '100%', height: '100%' }}
+            />
+          </Suspense>
+        </SplineBoundary>
       </div>
 
+      {/* Content overlay */}
       <div className="relative z-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="pt-28 pb-20 sm:pt-32 sm:pb-28">
@@ -32,7 +63,8 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/60" />
+      {/* Subtle darkening to ensure contrast over Spline */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/50" />
     </section>
   )
 }
